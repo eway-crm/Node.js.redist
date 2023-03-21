@@ -90,19 +90,16 @@ Function Get-NixNode($os, $arch, $osBrand) {
 }
 
 Function Get-WinNode($arch) {
-    $nodePath = Get-NetworkFile -Uri https://nodejs.org/dist/v$Version/win-$arch/node.exe -OutDir "$PSScriptRoot\obj\win-$arch-$Version"
-    $targetDir = "$LayoutRoot\tools\win-$arch"
-    if (!(Test-Path $targetDir)) {
-        $null = mkdir $targetDir
+    $targetDir = "$LayoutRoot\tools"
+    if (Test-Path $targetDir\win-$arch\node.exe) {
+        Write-Verbose "Skipped node bin for win-$arch"
+    } else {
+        Write-Verbose "Downloading node symbols for win-$arch..."
+        $zipPath = Get-NetworkFile -Uri https://nodejs.org/dist/v$Version/node-v$Version-win-$arch.zip -OutDir "$PSScriptRoot\obj\win-$arch-$Version"
+        if (!(Test-Path $targetDir)) { $null = mkdir $targetDir }
+        Expand-ZIPFile -file $zipPath -destination $targetDir
+        Rename-Item -Path "$targetDir\node-v$Version-win-$arch" -NewName "win-$arch"
     }
-
-    $targetDirSymbols = "$LayoutRootSymbols\tools\win-$arch"
-    if (!(Test-Path $targetDirSymbols)) {
-        $null = mkdir $targetDirSymbols
-    }
-
-    Copy-Item $nodePath $targetDir
-    Copy-Item $nodePath $targetDirSymbols
 }
 
 Function Get-WinNodePdb($arch) {
@@ -128,12 +125,12 @@ Function Get-LicenseFile {
     Get-NetworkFile -Uri "https://raw.githubusercontent.com/nodejs/node/v$Version/LICENSE" -OutDir "$PSScriptRoot\obj\$Version"
 }
 
-Get-NixNode 'linux' x64
+#Get-NixNode 'linux' x64
 #Get-NixNode 'linux' x86 # Node 10.0.0 removes support for x86 linux
-Get-NixNode 'darwin' x64 -osBrand 'osx'
-Get-NixNode 'darwin' arm64 -osBrand 'osx'
-Get-WinNode x86
-Get-WinNodePdb x86
+#Get-NixNode 'darwin' x64 -osBrand 'osx'
+#Get-NixNode 'darwin' arm64 -osBrand 'osx'
+#Get-WinNode x86
+#Get-WinNodePdb x86
 Get-WinNode x64
 Get-WinNodePdb x64
 Get-LicenseFile
